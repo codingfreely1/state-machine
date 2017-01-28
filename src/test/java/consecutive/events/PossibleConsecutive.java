@@ -3,7 +3,7 @@ package consecutive.events;
 import state.machine.State;
 
 /**
- * Created by yael on 27/01/17.
+ * Created by yael
  */
 public class PossibleConsecutive extends State {
     private final int MAX_CONSECUTIVE = 3;
@@ -16,26 +16,25 @@ public class PossibleConsecutive extends State {
     }
 
     @Override
-    public String getNextState(String eventIdentifier) {
-        if(prevEvent == null || !prevEvent.equals(eventIdentifier)){
-            prevEvent = eventIdentifier;
-            count = (prevEvent == null) ? 0 : 1;
-        } else {
-            count++;
-        }
-        if(count == MAX_CONSECUTIVE){
-            return Consecutive.getIdentifier();
-        } else {
-            return getIdentifier();
+    public String getNextStateId(String eventIdentifier) {
+        synchronized (this) {
+            if (prevEvent == null || !prevEvent.equals(eventIdentifier)) {
+                prevEvent = eventIdentifier;
+                count = (prevEvent == null) ? 0 : 1;
+            } else {
+                count = count +1;
+            }
+
+            if (count == MAX_CONSECUTIVE) {
+                return Consecutive.class.getName();
+            } else {
+                return getIdentifier();
+            }
         }
     }
 
     @Override
     public void doAction() {
 
-    }
-
-    public static String getIdentifier(){
-        return PossibleConsecutive.class.getName();
     }
 }

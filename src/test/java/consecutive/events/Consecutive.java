@@ -1,16 +1,15 @@
 package consecutive.events;
 
-import state.machine.Event;
 import state.machine.State;
 
 /**
- * Created by yael on 27/01/17.
+ * Created by yael
  */
 public class Consecutive extends State {
 
     @Override
-    public String getNextState(String eventIdentifier) {
-        return NoConsecutive.getIdentifier();
+    public String getNextStateId(String eventIdentifier) {
+        return NoConsecutive.class.getName();
     }
 
     @Override
@@ -18,7 +17,4 @@ public class Consecutive extends State {
         System.out.println("warning: consecutive condition reached");
     }
 
-    public static String getIdentifier() {
-        return Consecutive.class.getName();
-    }
 }

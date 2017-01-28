@@ -6,14 +6,12 @@ import consecutive.events.*;
 import exceptions.InvalidState;
 import org.junit.Assert;
 import org.junit.Test;
-import state.machine.State;
-import state.machine.StateMachine;
+import state.machine.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
 
 /**
- * Created by yael on 26/01/17.
+ * Created by yael
  */
 public class StateMachineTest {
 
@@ -22,24 +20,7 @@ public class StateMachineTest {
         State locked = new Locked();
         State unlocked = new Unlocked();
 
-        String coinEventId = CoinEvent.class.getName();
-        String pushEventId = PushEvent.class.getName();
-
-        String lockedId = Locked.getIdentifier();
-        String unlockedId = Unlocked.getIdentifier();
-
-        locked.addTransition(coinEventId, unlockedId);
-        locked.addTransition(pushEventId, lockedId);
-
-        unlocked.addTransition(coinEventId, unlockedId);
-        unlocked.addTransition(pushEventId, lockedId);
-
-        Map<String, State> statesMap = new HashMap<>();
-        statesMap.put(lockedId, locked);
-        statesMap.put(unlockedId, unlocked);
-
-        StateMachine stateMachine = new StateMachine(locked, statesMap);
-
+        StateMachine stateMachine = getCoinPushStateMachine(locked, unlocked);
         stateMachine.postEvent(new CoinEvent());
         try {
             Assert.assertEquals(unlocked, stateMachine.getCurState());
@@ -50,18 +31,31 @@ public class StateMachineTest {
         }
     }
 
+    private StateMachine getCoinPushStateMachine(State locked, State unlocked){
+        String coinEventId = CoinEvent.class.getName();
+        String pushEventId = PushEvent.class.getName();
+
+        String lockedId = locked.getIdentifier();
+        String unlockedId = unlocked.getIdentifier();
+
+        locked.addTransition(coinEventId, unlockedId);
+        locked.addTransition(pushEventId, lockedId);
+
+        unlocked.addTransition(coinEventId, unlockedId);
+        unlocked.addTransition(pushEventId, lockedId);
+
+        State[] states = {locked, unlocked};
+
+        return new StateMachine(locked, states, false);
+    }
+
     @Test
     public void testConsecutive(){
         State possibleConsecutive = new PossibleConsecutive();
         State consecutive = new Consecutive();
         State noConsecutive = new NoConsecutive();
 
-        Map<String, State> statesMap = new HashMap<>();
-        statesMap.put(PossibleConsecutive.getIdentifier(), possibleConsecutive);
-        statesMap.put(Consecutive.getIdentifier(), consecutive);
-        statesMap.put(NoConsecutive.getIdentifier(), noConsecutive);
-
-        StateMachine stateMachine = new StateMachine(possibleConsecutive, statesMap);
+        StateMachine stateMachine = getConsecutiveStateMachine(possibleConsecutive, consecutive, noConsecutive, false);
 
         try {
             stateMachine.postEvent(new EventOne());
@@ -82,6 +76,58 @@ public class StateMachineTest {
             Assert.assertEquals(noConsecutive, stateMachine.getCurState());
         } catch (InvalidState invalidState) {
             invalidState.printStackTrace();
+        }
+    }
+
+    private StateMachine getConsecutiveStateMachine(State possibleConsecutive, State consecutive, State noConsecutive, boolean isPersistent) {
+        State[] states = {possibleConsecutive, consecutive, noConsecutive};
+        return new StateMachine(possibleConsecutive, states, isPersistent);
+    }
+
+    @Test
+    public void testPersistentMachine() {
+        State possibleConsecutive = new PossibleConsecutive();
+        State consecutive = new Consecutive();
+        State noConsecutive = new NoConsecutive();
+
+        StateMachine stateMachine = getConsecutiveStateMachine(possibleConsecutive,consecutive, noConsecutive, true);
+        String uuid = stateMachine.getUuid();
+
+        stateMachine.postEvent(new EventOne());
+        try {
+            StateMachine recovered = StateMachine.resume(uuid);
+            recovered.postEvent(new EventOne());
+            recovered.postEvent(new EventOne());
+            Assert.assertEquals(consecutive, recovered.getCurState());
+        } catch (InvalidState invalidState) {
+            invalidState.printStackTrace();
+        }
+        deleteFile(stateMachine.getUuid());
+    }
+
+    @Test
+    public void testPersistentWorker() {
+        State possibleConsecutive = new PossibleConsecutive();
+        State consecutive = new Consecutive();
+        State noConsecutive = new NoConsecutive();
+
+        StateMachine stateMachine = getConsecutiveStateMachine(possibleConsecutive, consecutive, noConsecutive, true);
+        PersistentWorker<StateMachine> persistentWorker = new PersistentWorker<>(stateMachine.getUuid());
+        persistentWorker.serialize(stateMachine);
+
+        StateMachine recovered = persistentWorker.deserialize(StateMachine.class);
+        Assert.assertEquals(stateMachine, recovered);
+        deleteFile(stateMachine.getUuid());
+    }
+
+    private void deleteFile(String fileId){
+        final File folder = new File(System.getProperty("user.dir"));
+        final File[] files = folder.listFiles((dir, name) -> name.equals(fileId + ".json"));
+        assert files != null;
+        for ( final File file : files ) {
+            if ( !file.delete() ) {
+                System.err.println( "Can't remove " + file.getAbsolutePath() );
+            }
         }
     }
 }

@@ -3,7 +3,7 @@ package state.machine;
 import java.util.Properties;
 
 /**
- * Created by yael on 27/01/17.
+ * Created by yael
  */
 public abstract class Event {
     private Properties properties;

@@ -3,7 +3,7 @@ package consecutive.events;
 import state.machine.Event;
 
 /**
- * Created by yael on 27/01/17.
+ * Created by yael
  */
 public class EventOne extends Event{
 }

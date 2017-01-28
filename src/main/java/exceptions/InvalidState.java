@@ -1,7 +1,7 @@
 package exceptions;
 
 /**
- * Created by yael on 27/01/17.
+ * Created by yael
  */
 public class InvalidState extends Exception {
     public InvalidState(String s) {
