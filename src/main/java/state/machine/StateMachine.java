@@ -11,7 +11,7 @@ import java.util.concurrent.*;
 public class StateMachine {
 
     private State initialState;
-    private volatile String curStateId;
+    private String curStateId;
     private transient ExecutorService executor;
     private transient List<FutureTask<Boolean>> futureTaskList;
     private int maxSecondsPerAction = 5;
