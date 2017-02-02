@@ -6,6 +6,7 @@ import exceptions.StateNotFoundException;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
+
 /**
  * Created by yael
  */
@@ -61,6 +62,7 @@ public class StateMachine {
      * @return null if resume failed.
      */
     public static StateMachine resume(String uuid) {
+        //I think there is a problem here. Im creating copy of the state machine with same uuid. if the original machine is still active it will cause problems. (will save to same file)
         PersistentWorker<StateMachine> persistentWorker = new PersistentWorker<>(uuid);
         StateMachine stateMachine = persistentWorker.deserialize(StateMachine.class);
         if(stateMachine != null){
@@ -69,6 +71,10 @@ public class StateMachine {
         return stateMachine;
     }
 
+    /**
+     * The machine will update its state only after the event was processed. events which failed or pending are not saved. not supported yet.
+     * @param event
+     */
     public void postEvent(Event event) {
         removeCompletedTasks();
         FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
