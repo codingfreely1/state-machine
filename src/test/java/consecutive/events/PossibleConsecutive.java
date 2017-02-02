@@ -1,5 +1,6 @@
 package consecutive.events;
 
+import state.machine.Event;
 import state.machine.State;
 
 /**
@@ -16,7 +17,8 @@ public class PossibleConsecutive extends State {
     }
 
     @Override
-    public String getNextStateId(String eventIdentifier) {
+    public String getNextStateId(Event event) {
+        String eventIdentifier = event.getIdentifier();
         if (prevEvent == null || !prevEvent.equals(eventIdentifier)) {
             prevEvent = eventIdentifier;
             count = (prevEvent == null) ? 0 : 1;

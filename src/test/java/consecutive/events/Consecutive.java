@@ -1,5 +1,6 @@
 package consecutive.events;
 
+import state.machine.Event;
 import state.machine.State;
 
 /**
@@ -8,7 +9,7 @@ import state.machine.State;
 public class Consecutive extends State {
 
     @Override
-    public String getNextStateId(String eventIdentifier) {
+    public String getNextStateId(Event event) {
         return NoConsecutive.class.getName();
     }
 

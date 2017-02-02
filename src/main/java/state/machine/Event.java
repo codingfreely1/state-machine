@@ -6,14 +6,10 @@ import java.util.Properties;
  * Created by yael
  */
 public abstract class Event {
-    private Properties properties;
+    protected Properties properties;
 
     public Event() {
         this.properties = new Properties();
-    }
-
-    public Event(String identifier, Properties properties) {
-        this.properties = properties;
     }
 
     public void setProperties(Properties properties) {
@@ -22,5 +18,9 @@ public abstract class Event {
 
     public String getIdentifier() {
         return this.getClass().getName();
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 }

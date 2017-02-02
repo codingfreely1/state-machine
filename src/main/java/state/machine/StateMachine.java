@@ -1,8 +1,9 @@
 package state.machine;
 
 import exceptions.InvalidState;
-import org.junit.Assert;
+import exceptions.StateNotFoundException;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
 /**
@@ -71,10 +72,12 @@ public class StateMachine {
     public void postEvent(Event event) {
         removeCompletedTasks();
         FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
-            String nextStateId = stateMap.get(curStateId).getNextStateId(event.getIdentifier());
+            String nextStateId = stateMap.get(curStateId).getNextStateId(event);
             if (nextStateId != null) {
                 State nextState =  stateMap.get(nextStateId);
-                Assert.assertNotNull(nextState);
+                if(nextState == null){
+                    throw new StateNotFoundException(nextStateId + " is not defined in the state machine");
+                }
                 nextState.doAction();
                 curStateId = nextStateId;
             }
@@ -100,19 +103,45 @@ public class StateMachine {
         return initialState;
     }
 
-    public State getCurState() throws InvalidState {
+    public String getCurState() throws InvalidState {
         removeCompletedTasks();
         for(FutureTask<Boolean> task : futureTaskList) {
             getTaskResult(task);
         }
-        return stateMap.get(curStateId);
+        return stateMap.get(curStateId).getIdentifier();
     }
 
     private void getTaskResult(FutureTask<Boolean> task) throws InvalidState {
         try {
             task.get(maxSecondsPerAction, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new InvalidState("Action of state was not executed successfully");
+            throw new InvalidState("Action of state was not executed successfully." + e.getMessage());
+        }
+    }
+
+    /**
+     * will reset if state machine is done processing all events.
+     * @return
+     */
+    public boolean resetToInitialState(){
+        futureTaskList.removeIf(FutureTask::isDone);
+        removeCompletedTasks();
+        if(!futureTaskList.isEmpty()){
+            return false;
+        }
+        this.curStateId = initialState.getIdentifier();
+        deleteFile(uuid);
+        return true;
+    }
+
+    private void deleteFile(String fileId){
+        final File folder = new File(System.getProperty("user.dir"));
+        final File[] files = folder.listFiles((dir, name) -> name.equals(fileId + ".json"));
+        assert files != null;
+        for ( final File file : files ) {
+            if ( !file.delete() ) {
+                System.err.println( "Can't remove " + file.getAbsolutePath() );
+            }
         }
     }
 

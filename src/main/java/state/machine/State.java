@@ -31,8 +31,8 @@ public abstract class State {
      * getNextStateId
      * @return next state or null if no transition.
      */
-    public String getNextStateId(String eventIdentifier){
-        return transitions.get(eventIdentifier);
+    public String getNextStateId(Event event){
+        return transitions.get(event.getIdentifier());
     }
 
     public Map<String, String> getTransitions() {
